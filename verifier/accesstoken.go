@@ -79,6 +79,7 @@ var contractAlgorithms = []Algorithm{ES256, EdDSA, RS256}
 // claims (iss, sub, aud, exp, iat, jti, client_id, scope), a lifetime within the limit and a time inside the skew.
 // Every refusal is an *Error with the code of the check that failed.
 func VerifyAccessToken(ctx context.Context, token string, o Options) (*Claims, error) {
+	// Split and decode first; nothing is trusted until the signature has been checked.
 	p, err := parse(token)
 	if err != nil {
 		return nil, err
@@ -87,6 +88,7 @@ func VerifyAccessToken(ctx context.Context, token string, o Options) (*Claims, e
 	if typ := strings.ToLower(p.hdr.Typ); typ != "at+jwt" && typ != "application/at+jwt" {
 		return nil, newError(CodeType)
 	}
+	// The allow-list: the contract's own unless the caller narrowed it.
 	algs := o.Algorithms
 	if len(algs) == 0 {
 		algs = contractAlgorithms
@@ -94,17 +96,21 @@ func VerifyAccessToken(ctx context.Context, token string, o Options) (*Claims, e
 		// A caller may narrow the list but never add to it.
 		algs = narrow(algs)
 	}
+	// The token's claimed algorithm must be on the list, compared exactly.
 	alg, ok := allowed(p.hdr.Alg, algs)
 	if !ok {
 		return nil, newError(CodeAlgorithm)
 	}
+	// Find the key by `kid`; the cache decides whether a refresh is allowed.
 	key, err := o.Keys.Key(ctx, p.hdr.Kid)
 	if err != nil {
 		return nil, err
 	}
+	// The signature, with a key whose type must match the algorithm.
 	if err := verifySignature(alg, key, p.signingInput, p.sig); err != nil {
 		return nil, err
 	}
+	// Only now are the claims read: they come from a payload whose signature has verified.
 	c, err := claimsOf(p.claims)
 	if err != nil {
 		return nil, err
@@ -131,10 +137,12 @@ func check(c *Claims, o Options) error {
 	if !contains(c.Audience, o.Audience) {
 		return newError(CodeAudience)
 	}
+	// The clock is injectable for tests; production uses the real one.
 	now := time.Now()
 	if o.Now != nil {
 		now = o.Now()
 	}
+	// The tolerance for clocks that disagree: 30 seconds by default, never more than the contract's 60.
 	skew := o.Skew
 	if skew == 0 {
 		skew = 30 * time.Second
@@ -142,6 +150,7 @@ func check(c *Claims, o Options) error {
 	if skew > MaxSkew {
 		skew = MaxSkew
 	}
+	// The longest a token may live: a user's 15 minutes unless the resource server says it only serves machines.
 	longest := o.MaxLifetime
 	if longest == 0 {
 		longest = UserLifetime
@@ -169,6 +178,7 @@ func claimsOf(raw map[string]any) (*Claims, error) {
 	if c.ClientID, ok = str(raw, "client_id"); !ok {
 		return nil, newError(CodeClaim)
 	}
+	// `scope` is a space-separated string (RFC 9068 section 2.2.3).
 	scope, ok := str(raw, "scope")
 	if !ok {
 		return nil, newError(CodeClaim)
@@ -184,6 +194,7 @@ func claimsOf(raw map[string]any) (*Claims, error) {
 		return nil, newError(CodeClaim)
 	}
 	c.Expiry, c.IssuedAt = exp, iat
+	// `cnf.jkt` is the thumbprint of the DPoP key the token is bound to; its absence means a bearer token.
 	if cnf, present := raw["cnf"]; present {
 		m, isMap := cnf.(map[string]any)
 		if !isMap {

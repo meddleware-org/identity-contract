@@ -13,6 +13,7 @@ const problemType = "application/problem+json"
 // Scheme is the authentication scheme named in a `WWW-Authenticate` challenge.
 type Scheme string
 
+// The two schemes a challenge can name.
 const (
 	// SchemeBearer challenges a bearer access token.
 	SchemeBearer Scheme = "Bearer"

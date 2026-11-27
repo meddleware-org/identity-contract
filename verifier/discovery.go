@@ -74,6 +74,7 @@ func FetchDiscovery(ctx context.Context, client *http.Client, issuer string, all
 	if !validIssuer(issuer, allowInsecure) {
 		return nil, newError(CodeDiscovery)
 	}
+	// The well-known path is derived from the issuer, so nothing but the configured issuer is ever fetched.
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(issuer, "/")+"/.well-known/openid-configuration", nil)
 	if err != nil {
 		return nil, newError(CodeDiscovery)

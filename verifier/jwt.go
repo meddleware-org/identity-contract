@@ -64,17 +64,20 @@ func parse(token string) (*parsed, error) {
 	if len(parts) != 3 {
 		return nil, newError(CodeMalformed)
 	}
+	// Each of the three parts is unpadded base64url.
 	hb, errH := b64(parts[0])
 	pb, errP := b64(parts[1])
 	sig, errS := b64(parts[2])
 	if errH != nil || errP != nil || errS != nil {
 		return nil, newError(CodeMalformed)
 	}
+	// The signing input is the first two parts exactly as received, dot included.
 	p := &parsed{signingInput: []byte(parts[0] + "." + parts[1]), sig: sig}
 	// Strict decoding: unknown header fields are fine, but a duplicate-key or trailing-garbage document is refused by the decoder's end check.
 	if err := decodeStrict(hb, &p.hdr); err != nil {
 		return nil, newError(CodeMalformed)
 	}
+	// Numbers stay exact (json.Number), so an `exp` is never rounded by a float.
 	dec := json.NewDecoder(bytes.NewReader(pb))
 	dec.UseNumber()
 	if err := dec.Decode(&p.claims); err != nil || dec.More() || p.claims == nil {
@@ -118,6 +121,7 @@ func verifySignature(alg Algorithm, key crypto.PublicKey, signingInput, sig []by
 		if !ecdsa.Verify(pub, sum[:], new(big.Int).SetBytes(sig[:32]), new(big.Int).SetBytes(sig[32:])) {
 			return newError(CodeSignature)
 		}
+	// Ed25519 signs the input directly; there is no separate hash.
 	case EdDSA:
 		pub, ok := key.(ed25519.PublicKey)
 		if !ok || !ed25519.Verify(pub, signingInput, sig) {

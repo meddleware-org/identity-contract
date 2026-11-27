@@ -71,6 +71,7 @@ func TestKeySetKeepsOldKeysWhenTheProviderIsDown(t *testing.T) {
 		return []JWK{a.jwk}, nil
 	}, WithClock(clk.now), WithMinRefresh(time.Second))
 	_, _ = ks.Key(context.Background(), "a")
+	// The provider goes down: the next refresh fails, and the keys already held must keep working.
 	down = true
 	clk.t = epoch.Add(10 * time.Second)
 	if _, err := ks.Key(context.Background(), "a"); err != nil {
@@ -107,6 +108,7 @@ func TestKeySetRefusesOversizedAndUnusableSets(t *testing.T) {
 			t.Errorf("%s must not be usable: %v", kid, err)
 		}
 	}
+	// A set with no usable key at all is refused as a whole.
 	none := NewKeySet(func(context.Context) ([]JWK, error) { return []JWK{{Kty: "oct"}}, nil })
 	_, err = none.Key(context.Background(), "x")
 	wantCode(t, err, CodeKey)

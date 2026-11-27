@@ -16,6 +16,7 @@ func TestWriteProblem(t *testing.T) {
 	if rec.Code != 401 || rec.Header().Get("WWW-Authenticate") != `DPoP error="invalid_token"` || rec.Header().Get("Content-Type") != "application/problem+json" || rec.Header().Get("Cache-Control") != "no-store" {
 		t.Fatalf("401: %d %v", rec.Code, rec.Header())
 	}
+	// The body names the status and nothing else: no reason, no claim.
 	var body map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil || body["status"] != float64(401) || body["title"] != "Unauthorized" || body["type"] != "about:blank" || len(body) != 3 {
 		t.Fatalf("body %v (%v)", body, err)

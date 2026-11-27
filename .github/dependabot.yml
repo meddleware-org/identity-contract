@@ -2,6 +2,7 @@
 # there is nothing to update in go.sum; the `golang` ignore rule below keeps the toolchain a deliberate move (D52, D147).
 version: 2
 updates:
+  # The module has no third-party dependency, so this entry watches the Go toolchain line only.
   - package-ecosystem: gomod
     directory: /
     schedule:
@@ -12,6 +13,7 @@ updates:
       - dependency-name: "golang"
         update-types: ["version-update:semver-minor", "version-update:semver-major"]
     groups:
+      # Minor and patch updates arrive as one pull request, merged once CI passes (D41).
       go-minor-patch:
         update-types: [minor, patch]
   # Actions are pinned by full commit SHA (D12); one pull request moves every pin together.

@@ -83,6 +83,7 @@ type DPoPRequest struct {
 // request, `iat` within a minute, an unseen `jti`, `ath` equal to the token's hash, the key's thumbprint equal to `cnf.jkt`, and the nonce when required.
 // A token without a `cnf.jkt` where DPoP is required fails here (an empty ConfirmationJKT never matches).
 func VerifyDPoP(proof string, req DPoPRequest, replay ReplayCache) (string, error) {
+	// Decode the proof like any other token; the checks follow RFC 9449 section 4.3 in order.
 	p, err := parse(proof)
 	if err != nil {
 		return "", err
@@ -102,6 +103,7 @@ func VerifyDPoP(proof string, req DPoPRequest, replay ReplayCache) (string, erro
 	if err := verifySignature(alg, key, p.signingInput, p.sig); err != nil {
 		return "", err
 	}
+	// The thumbprint identifies the proof key, for the binding check and as the replay-cache namespace.
 	jkt, err := p.hdr.JWK.Thumbprint()
 	if err != nil {
 		return "", err
@@ -110,6 +112,7 @@ func VerifyDPoP(proof string, req DPoPRequest, replay ReplayCache) (string, erro
 	if req.ConfirmationJKT == "" || subtle.ConstantTimeCompare([]byte(jkt), []byte(req.ConfirmationJKT)) != 1 {
 		return "", newError(CodeBinding)
 	}
+	// The proof is judged at the request's time (injectable for tests).
 	now := req.Now
 	if now.IsZero() {
 		now = time.Now()
@@ -117,6 +120,7 @@ func VerifyDPoP(proof string, req DPoPRequest, replay ReplayCache) (string, erro
 	if err := checkProofClaims(p.claims, req, now); err != nil {
 		return "", err
 	}
+	// Replay is checked last, so a proof that fails any other check never takes a slot in the cache.
 	jti, _ := str(p.claims, "jti")
 	if replay == nil || replay.Seen(jkt+"|"+jti, now.Add(2*DPoPWindow), now) {
 		return "", newError(CodeReplay)
@@ -137,6 +141,7 @@ func checkProofClaims(claims map[string]any, req DPoPRequest, now time.Time) err
 	if htm != req.Method || !sameURL(htu, req.URL) {
 		return newError(CodeBinding)
 	}
+	// A proof is valid for a minute either side of now.
 	iat, ok := unix(claims["iat"])
 	if !ok {
 		return newError(CodeClaim)

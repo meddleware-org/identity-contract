@@ -33,11 +33,14 @@ func TestAccessTokenAcceptsEveryAllowedAlgorithm(t *testing.T) {
 // TestAccessTokenRefusals: each way a token can be wrong is refused with its own code, and a token that is good except for one thing is not accepted.
 func TestAccessTokenRefusals(t *testing.T) {
 	s := newES256(t, "k1")
+	// A second key with the same kid: a token it signs must not verify against the first.
 	other := newES256(t, "k1")
 	ks := keysFor(s)
+	// The standard header and two helpers that change or drop one claim.
 	hdr := func() map[string]any { return map[string]any{"alg": "ES256", "typ": "at+jwt", "kid": "k1"} }
 	with := func(k string, v any) map[string]any { c := goodClaims(); c[k] = v; return c }
 	without := func(k string) map[string]any { c := goodClaims(); delete(c, k); return c }
+	// Every refusal, each with the code the log would show.
 	cases := []struct {
 		name string
 		tok  string
@@ -86,6 +89,7 @@ func TestAccessTokenLifetimeLimits(t *testing.T) {
 	if _, err := VerifyAccessToken(context.Background(), tok, o); err != nil {
 		t.Fatalf("user limit: %v", err)
 	}
+	// A machine-only resource server accepts only 5 minutes.
 	o.MaxLifetime = MachineLifetime
 	_, err := VerifyAccessToken(context.Background(), tok, o)
 	wantCode(t, err, CodeExpired)
@@ -95,6 +99,7 @@ func TestAccessTokenLifetimeLimits(t *testing.T) {
 func TestAccessTokenSkew(t *testing.T) {
 	s := newES256(t, "k1")
 	c := goodClaims()
+	// Expired 20 seconds ago: inside the default 30-second tolerance.
 	c["exp"] = epoch.Add(-20 * time.Second).Unix()
 	c["iat"] = epoch.Add(-5 * time.Minute).Unix()
 	tok := compact(t, map[string]any{"alg": "ES256", "typ": "at+jwt", "kid": "k1"}, c, s)

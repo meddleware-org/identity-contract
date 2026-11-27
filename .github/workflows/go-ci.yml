@@ -8,10 +8,13 @@ name: Go CI
 #       scan (Trivy filesystem: vulnerabilities, misconfiguration, secrets).
 
 on:
+  # Every push, on every branch.
   push:
     branches: ["**"]
+  # Every pull request.
   pull_request:
     branches: ["**"]
+  # The release workflow of a consumer may call this one.
   workflow_call:
 
 permissions:
@@ -29,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The toolchain go.mod names, with the module cache.
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -49,8 +53,10 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      # Vet first: it is quick and its findings explain many test failures.
       - name: go vet
         run: go vet ./...
+      # The whole suite under the race detector, with a coverage profile for the floor below.
       - name: go test (race + coverage)
         run: go test -v -race -coverprofile=coverage.out ./...
       # The floor: below 90 % the change must bring tests with it.
@@ -81,9 +87,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Fail on fixable critical or high findings only, so the gate is actionable.
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          # Scan the repository files, not an image: this module ships no image.
           scan-type: fs
           scan-ref: .
           scanners: vuln,misconfig,secret

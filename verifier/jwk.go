@@ -84,6 +84,7 @@ func (k JWK) PublicKey() (crypto.PublicKey, error) {
 		if errN != nil || errE != nil || len(e) == 0 || len(e) > 4 {
 			return nil, newError(CodeKey)
 		}
+		// The modulus must be at least 2048 bits.
 		mod := new(big.Int).SetBytes(n)
 		if mod.BitLen() < minRSABits {
 			return nil, newError(CodeKey)
@@ -101,6 +102,7 @@ func (k JWK) PublicKey() (crypto.PublicKey, error) {
 // Thumbprint is the RFC 7638 SHA-256 thumbprint of the key, base64url without padding: the value of `cnf.jkt` in a DPoP-bound token.
 func (k JWK) Thumbprint() (string, error) {
 	// The required members only, in lexicographic order, with no whitespace: the canonical form RFC 7638 hashes.
+	// The canonical thumbprint input (RFC 7638 section 3): only the required members.
 	var canon string
 	switch k.Kty {
 	case "EC":
@@ -112,6 +114,7 @@ func (k JWK) Thumbprint() (string, error) {
 	default:
 		return "", newError(CodeKey)
 	}
+	// Hash the canonical text; the result is the `jkt` a DPoP-bound token carries.
 	sum := sha256.Sum256([]byte(canon))
 	return base64.RawURLEncoding.EncodeToString(sum[:]), nil
 }

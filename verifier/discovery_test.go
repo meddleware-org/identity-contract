@@ -43,6 +43,7 @@ func TestParseDiscovery(t *testing.T) {
 	if err != nil || d.JWKSURI != testIssuer+"/jwks" {
 		t.Fatalf("good document: %v %+v", err, d)
 	}
+	// Each entry breaks exactly one rule of contract section 1.
 	bad := map[string][]byte{
 		"issuer differs":     discoveryWith("issuer", "https://evil.example"),
 		"issuer with slash":  discoveryWith("issuer", testIssuer+"/"),
@@ -68,6 +69,7 @@ func TestParseDiscovery(t *testing.T) {
 	if _, err := ParseDiscovery([]byte(`{} {}`), testIssuer, false); CodeOf(err) != CodeMalformed {
 		t.Errorf("trailing data: %v", err)
 	}
+	// The configured issuer itself must be https, without a query or fragment, and well-formed.
 	for _, iss := range []string{"http://id.example", "https://id.example?x=1", "https://id.example#f", "not a url", "https://"} {
 		if _, err := ParseDiscovery(good, iss, false); CodeOf(err) != CodeDiscovery {
 			t.Errorf("issuer %q accepted", iss)
@@ -77,6 +79,7 @@ func TestParseDiscovery(t *testing.T) {
 
 // TestFetchDiscovery reads the document from a test server in development mode and refuses a server that answers with an error.
 func TestFetchDiscovery(t *testing.T) {
+	// The test server is its own issuer, so the document it serves names its own URL.
 	var issuer string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/.well-known/openid-configuration" {
