@@ -14,10 +14,15 @@ import (
 	"github.com/meddleware-org/identity-contract/authzen"
 )
 
-// pdp returns a client for the PDP named by CONF_AUTHZEN_BASE (the store's base URL), or skips the test.
+// pdp returns a client for the PDP at base (the store's base URL). When CONF_AUTHZEN_TOKEN is set it is sent as the Bearer token, as a PDP
+// with pre-shared-key authentication (the production OpenFGA) requires.
 func pdp(t *testing.T, base string) *authzen.Client {
 	t.Helper()
-	c, err := authzen.New(base, &http.Client{Timeout: 3 * time.Second})
+	var opts []authzen.Option
+	if tok := os.Getenv("CONF_AUTHZEN_TOKEN"); tok != "" {
+		opts = append(opts, authzen.WithToken(func(context.Context) (string, error) { return tok, nil }))
+	}
+	c, err := authzen.New(base, &http.Client{Timeout: 3 * time.Second}, opts...)
 	if err != nil {
 		t.Fatal(err)
 	}

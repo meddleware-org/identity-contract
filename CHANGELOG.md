@@ -5,6 +5,11 @@ release is a patch bump, breaking changes included.
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-11-27
+
+### Changed
+- `conformance`: the AuthZEN tests send `CONF_AUTHZEN_TOKEN` as a Bearer token when it is set (a PDP with pre-shared-key authentication). The suite now passes against the live Keycloak and OpenFGA of the Meddleware instance.
+
 ## [0.0.4] - 2026-11-27
 
 ### Added
