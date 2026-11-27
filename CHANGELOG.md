@@ -5,6 +5,12 @@ release is a patch bump, breaking changes included.
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-11-27
+
+### Added
+- `verifier.VerifyIDToken` and `verifier.VerifyLogoutToken` (contract section 3): the checks a console's backend makes after the code exchange and on back-channel logout, with configurable `acr` and `amr` requirements.
+- Package `authzen` (contract section 4): the AuthZEN 1.0 Access Evaluation client, with the 30-second and 5-second cache lifetimes and the fail-closed rule.
+
 ## [0.0.1] - 2026-11-27
 
 ### Added

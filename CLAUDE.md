@@ -8,7 +8,8 @@ provider's discovery and JWKS endpoints.
 ## Layout
 
 - `verifier/` — the package: `doc.go` (package doc), `errors.go` (the `Error` type and its `Code`s), `jwk.go` (key parsing and RFC 7638 thumbprints), `jwt.go` (compact-JWS parsing, algorithm pinning,
-  signature checks), `keyset.go` (the JWKS cache), `discovery.go`, `accesstoken.go`, `dpop.go`, `problem.go`; one `_test.go` for each, with `helpers_test.go` for the key and token builders.
+  signature checks), `keyset.go` (the JWKS cache), `discovery.go`, `accesstoken.go`, `idtoken.go` (ID and logout tokens), `dpop.go`, `problem.go`; one `_test.go` for each, with `helpers_test.go` for the key and token builders.
+- `authzen/` — the AuthZEN 1.0 Access Evaluation client (`client.go`): the cache lifetimes (allow 30 s, deny 5 s, never with a `context`) and fail-closed rule are built in.
 - `docs/CONTRACT.md` — the contract, the canonical text.
 - `.github/workflows/go-ci.yml` — lint, test (race + 90 % coverage floor), govulncheck, Trivy.
 
@@ -25,9 +26,10 @@ golangci-lint run
 - **Algorithms are pinned, never read from the token.** ES256, EdDSA and RS256 for access tokens; ES256 and EdDSA for DPoP proofs. `none` and every HMAC fail with `CodeAlgorithm`; a caller can only narrow
   the list (`narrow`), never extend it. The key type must match the algorithm (key-confusion test).
 - **Errors say which check refused, never what the token held.** `*Error` is only a `Code`; the response (`WriteProblem`) names nothing. A test asserts that no claim value reaches an error string.
-- **Fail closed.** An unknown kid, an unusable key set, a full replay cache, a missing replay cache and a token with no `cnf.jkt` where DPoP is required are all refusals.
+- **Fail closed.** A PDP that cannot be reached or answers with anything but a clear `decision` is `authzen.ErrUnavailable` (the caller answers 503). An unknown kid, an unusable key set, a full replay cache, a missing replay cache and a token with no `cnf.jkt` where DPoP is required are all refusals.
 - **The JWKS rule:** one refresh at most every 30 seconds whatever the tokens ask for; a failed refresh keeps the old keys; the set is bounded (32 keys, 1 MiB, one hour).
 - **The contract changes by decision.** A change to `docs/CONTRACT.md` is a D-number in the workspace log, announced before it applies; the verifier and the tests change in the same commit.
+- **ID tokens and logout tokens are not access tokens.** `VerifyIDToken` refuses a header `typ` of `at+jwt` and requires the echoed nonce; `VerifyLogoutToken` requires `typ` `logout+jwt`, the back-channel event, no `nonce` and an unseen `jti`. The `acr` and `amr` strings are configuration until the spike fixes them (FU-0182).
 - **Test both directions.** Every rule has an accepting and a refusing test (RFC 7638's own vector pins the thumbprint).
 
 ## Documentation rules (workspace documentation standard, D144)

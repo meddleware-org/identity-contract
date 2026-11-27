@@ -7,8 +7,9 @@ passes the suite is a drop-in replacement. Licence: BSD Zero Clause ([0BSD](LICE
 
 - **The contract:** [docs/CONTRACT.md](docs/CONTRACT.md), draft v1 (OpenID Connect Core and Discovery, RFC 9068 access tokens, RFC 9449 DPoP, RFC 7523, RFC 7636, RFC 9207, RFC 9457, AuthZEN 1.0).
 - **What is built today:** package `verifier`: discovery checks (section 1), a bounded JWKS cache with the 30-second refresh rule (section 1), access-token verification with a pinned algorithm
-  list (section 2), DPoP proof verification with a replay cache (section 5) and the uniform error response (section 6). Not yet: the AuthZEN client (section 4), the ID-token and logout checks of
-  a console backend (section 3) and the conformance suite against a live provider (section 9).
+  list (section 2), ID-token and back-channel-logout-token verification for a console's backend (section 3), DPoP proof verification with a replay cache (section 5) and the uniform error
+  response (section 6); package `authzen`: the AuthZEN 1.0 Access Evaluation client with the contract's cache lifetimes and fail-closed rule (section 4). Not yet: the Rust crate for the two
+  consoles and the conformance suite against a live provider (section 9).
 - **Dependencies:** none (Go standard library only), so a service that imports it adds no supply-chain surface.
 - **Context for contributors and agents:** [CLAUDE.md](CLAUDE.md); how to build and propose a change: [CONTRIBUTING.md](CONTRIBUTING.md).
 
