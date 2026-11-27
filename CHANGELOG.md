@@ -5,6 +5,12 @@ release is a patch bump, breaking changes included.
 
 ## [Unreleased]
 
+## [0.0.4] - 2026-11-27
+
+### Added
+- `conformance`: `TestAuthZENDecisions` and `TestAuthZENFailsClosed` (contract section 4) against a live policy decision point; OpenFGA 1.23 with the AuthZEN experiment passes (allow, deny, and an
+  unreachable PDP or a missing store both end in `ErrUnavailable`).
+
 ## [0.0.3] - 2026-11-27
 
 ### Added
