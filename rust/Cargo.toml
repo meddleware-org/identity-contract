@@ -1,0 +1,36 @@
+# meddleware-identity: the Rust half of the platform's identity contract (docs/CONTRACT.md): the pure verification logic the two operator consoles (content-hub-service,
+# link-in-bio-service) share, so neither carries its own copy. No network, no clock, no storage of its own: the caller fetches documents, supplies `now`, and keeps sessions.
+[package]
+name = "meddleware-identity"
+version = "0.0.1"
+edition = "2024"
+# The floor the consuming services build with (sqlx 0.9 needs 1.94).
+rust-version = "1.94"
+license = "0BSD"
+repository = "https://github.com/meddleware-org/identity-contract"
+description = "ID-token, logout-token, discovery, PKCE and AuthZEN logic of the Meddleware identity contract"
+# Consumed by git tag, never published to crates.io.
+publish = false
+
+# Exact pins, as in the rest of the fleet.
+[dependencies]
+base64 = "=0.23.1"
+ring = "=0.17.14"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+thiserror = "=2.0.21"
+
+# The `testing` feature exposes the throw-away signer to other crates' tests (never enabled in a release build).
+[features]
+testing = []
+
+[lints.rust]
+# No `unsafe`, and every item documented (the workspace documentation standard, D144).
+unsafe_code = "deny"
+missing_docs = "deny"
+
+[lints.clippy]
+missing_docs_in_private_items = "deny"
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"

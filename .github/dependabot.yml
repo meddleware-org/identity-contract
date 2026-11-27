@@ -25,3 +25,13 @@ updates:
     groups:
       github-actions:
         patterns: ['*']
+  # The Rust crate's dependencies (exact pins, as in the rest of the fleet): minor and patch updates arrive as one pull request, merged once CI passes (D41).
+  - package-ecosystem: cargo
+    directory: /rust
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      cargo-minor-patch:
+        update-types: [minor, patch]
+

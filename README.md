@@ -49,3 +49,16 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 
 Which standards the verifier speaks and the tests that prove each are listed in [CLAUDE.md](CLAUDE.md) ("Conventions") and in the contract's header; the platform-wide list is
 [Standards we use](https://meddleware.dev/platform/standards).
+
+## The Rust crate
+
+`rust/` holds `meddleware-identity`, the pure verification logic of the contract for Rust services (the two operator consoles): key sets and signature checks, the key cache rules, discovery, the ID and logout tokens, PKCE,
+the AuthZEN request and cache, and session identifiers and cookies. It has no network, clock or storage of its own: the caller fetches the documents, passes `now`, and keeps the sessions. Consume it by git tag:
+
+```toml
+meddleware-identity = { git = "https://github.com/meddleware-org/identity-contract", tag = "v0.0.6" }
+```
+
+```bash
+cd rust && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test --features testing
+```

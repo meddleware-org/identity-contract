@@ -1,0 +1,71 @@
+name: Rust CI
+
+# Continuous integration gate for the Rust crate of identity-contract (rust/: meddleware-identity), the verification logic the operator consoles share.
+# Runs on every push and pull request. Jobs: format and clippy (warnings are errors, and so are missing docs), tests with a coverage floor, cargo-deny (advisories, licences, sources).
+
+on:
+  # Every push, on every branch.
+  push:
+    branches: ["**"]
+  # Every pull request.
+  pull_request:
+    branches: ["**"]
+  # A consumer's workflow may call this one.
+  workflow_call:
+
+permissions:
+  # Read-only token: CI only checks out and reads the repository.
+  contents: read
+
+env:
+  DO_NOT_TRACK: "1"
+
+jobs:
+  # fmt, clippy and the tests, and a 90 % line-coverage floor (the Go library's rule).
+  check:
+    name: fmt, clippy, test, coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      # The commit under test.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # rustup ships on the runner image; using it directly leaves no third-party toolchain action to pin.
+      - name: Install the stable toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy,llvm-tools --no-self-update && rustup default stable
+      # Compiled dependencies are cached between runs.
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: rust
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Formatting is checked, never rewritten, in CI.
+      - name: Format check
+        run: cargo fmt --check
+      # Warnings are errors, and the documentation lints are part of that.
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+      # Tests with the `testing` feature (the throw-away signer is also what the unit tests use).
+      - name: Test
+        run: cargo test --locked --features testing
+      # cargo-llvm-cov, installed by the pinned action the other Rust repositories use.
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@b80e2bb2635f28eb98b9fce1e2f0887e1535c6b2 # v2.90.0
+        with:
+          tool: cargo-llvm-cov@0.9.1
+      # The coverage floor: fail below 90 % of lines.
+      - name: Coverage
+        run: cargo llvm-cov --locked --features testing --fail-under-lines 90
+
+  # Advisories, bans, licences and sources of the dependency graph.
+  deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      # The commit under test.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The official action runs cargo-deny with the repository's rust/deny.toml.
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          manifest-path: rust/Cargo.toml
+          command: check

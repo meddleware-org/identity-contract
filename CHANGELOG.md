@@ -5,6 +5,11 @@ release is a patch bump, breaking changes included.
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-11-27
+
+### Added
+- `rust/`: the crate `meddleware-identity`, the Rust half of the contract, for the two operator consoles (content-hub-service, link-in-bio-service), which until now each carried their own copy of an RS256-only verifier. Pure logic (no network, clock or storage): JWK sets and signature checks with pinned algorithms (RS256, ES256, EdDSA), the key-cache refresh rules (unknown key at most every 30 s, never older than an hour), the discovery document check (contract section 1), the ID token and the back-channel logout token (section 3, with a replay cache), PKCE and the one-time values of a login, the AuthZEN request and decision cache (section 4), and session identifiers and the exact `__Host-` cookie attributes. 23 tests (97 % of lines), RS256 and ES256 vectors for every refusal, `cargo-deny`, clippy with the documentation lints as errors. Consumed by git tag. CI: `rust-ci.yml`.
+
 ## [0.0.5] - 2026-11-27
 
 ### Changed

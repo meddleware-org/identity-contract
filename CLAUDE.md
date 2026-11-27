@@ -13,11 +13,14 @@ provider's discovery and JWKS endpoints.
 - `docs/CONTRACT.md` — the contract, the canonical text.
 - `.github/workflows/go-ci.yml` — lint, test (race + 90 % coverage floor), govulncheck, Trivy.
 
+- `rust/` — the Rust crate `meddleware-identity` (`src/`: `jwk`, `jwt`, `keyset`, `discovery`, `idtoken`, `logout`, `pkce`, `authzen`, `session`, `testing`); CI `.github/workflows/rust-ci.yml`. Rules as the Go library: algorithms pinned (RS256, ES256, EdDSA), errors name the check and never carry token contents, fail closed, the cache rules of the contract (key refresh 30 s, decision cache allow 30 s / deny 5 s, never with a context). Pure: no I/O.
+
 ## Commands
 
 ```bash
 go vet ./... && go test -race -cover ./...
 golangci-lint run
+cd rust && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test --features testing && cargo deny check
 ```
 
 ## Conventions and hard rules
