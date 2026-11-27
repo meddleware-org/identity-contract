@@ -1,0 +1,25 @@
+# Dependabot: weekly, grouped update pull requests for GitHub Actions and the Go toolchain line. The module has no third-party dependency, so
+# there is nothing to update in go.sum; the `golang` ignore rule below keeps the toolchain a deliberate move (D52, D147).
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      # The Go toolchain is pinned by go.mod's toolchain line and moved deliberately, with the builder images, never by a bot's minor or major (D52, D147).
+      - dependency-name: "golang"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+    groups:
+      go-minor-patch:
+        update-types: [minor, patch]
+  # Actions are pinned by full commit SHA (D12); one pull request moves every pin together.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ['*']

@@ -1,0 +1,93 @@
+name: Go CI
+
+# Continuous integration gate for identity-contract: the verifier library every resource server and console backend uses to check
+# tokens. Runs on every push and pull request; the release (a version tag, which is how a Go module is published) is cut only from
+# a green commit.
+#
+# Jobs: lint (golangci-lint with the documentation rules) -> test (vet + race + coverage floor) -> vuln (govulncheck) ->
+#       scan (Trivy filesystem: vulnerabilities, misconfiguration, secrets).
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_call:
+
+permissions:
+  # Read-only token: CI only checks out and reads the repository.
+  contents: read
+
+env:
+  DO_NOT_TRACK: "1"
+  GOTELEMETRY: "off"
+
+jobs:
+  # Lint: golangci-lint on the module with the pinned version, so a new rule never fails a release unannounced.
+  lint:
+    name: Lint (golangci-lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.13.0
+          args: --timeout=5m
+
+  # Test: go vet, then the suite under the race detector with coverage; the library is security code, so coverage has a floor.
+  test:
+    name: Test (vet + race + coverage floor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: go vet
+        run: go vet ./...
+      - name: go test (race + coverage)
+        run: go test -v -race -coverprofile=coverage.out ./...
+      # The floor: below 90 % the change must bring tests with it.
+      - name: Coverage floor
+        run: |
+          total=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%","",$3); print $3}')
+          echo "coverage: ${total}%"
+          awk -v t="$total" 'BEGIN { exit (t < 90) }' || { echo "::error::coverage ${total}% is below the 90% floor"; exit 1; }
+
+  # Vulnerabilities: govulncheck reports only the advisories whose vulnerable code the library can reach.
+  vuln:
+    name: Vulnerabilities (govulncheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0  # pinned; the module checksum database verifies it
+          govulncheck ./...
+
+  # Scan: Trivy over the repository files for known-vulnerable dependencies, misconfiguration and committed secrets.
+  scan:
+    name: Filesystem scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig,secret
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          version: v0.74.0

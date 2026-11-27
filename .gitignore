@@ -1,0 +1,5 @@
+# Coverage output of `go test -coverprofile`.
+coverage.out
+# Editor and OS files.
+.DS_Store
+*.swp
