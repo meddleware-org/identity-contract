@@ -50,7 +50,7 @@ jobs:
         run: cargo test --locked --features testing
       # cargo-llvm-cov, installed by the pinned action the other Rust repositories use.
       - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@b80e2bb2635f28eb98b9fce1e2f0887e1535c6b2 # v2.90.0
+        uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
         with:
           tool: cargo-llvm-cov@0.9.1
       # The coverage floor: fail below 90 % of lines.
@@ -65,7 +65,7 @@ jobs:
       # The commit under test.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The official action runs cargo-deny with the repository's rust/deny.toml.
-      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+      - uses: EmbarkStudios/cargo-deny-action@81891abc19297b21343b15ef67dc61e4aea74fda # v2.1.4
         with:
           manifest-path: rust/Cargo.toml
           command: check
