@@ -1,3 +1,5 @@
+// Test helpers: key pairs for each algorithm, a compact-JWS builder and the fixed clock and issuer the tests share.
+
 package verifier
 
 import (

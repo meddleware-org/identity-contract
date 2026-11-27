@@ -1,3 +1,5 @@
+// Tests of DPoP verification: a good proof once, each refusal (binding, time, replay, key, algorithm), the RFC 7638 vector and the replay cache.
+
 package verifier
 
 import (

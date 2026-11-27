@@ -1,3 +1,5 @@
+// OpenID Connect discovery (contract section 1): fetch the provider's document and check it against the contract before anything is trusted.
+
 package verifier
 
 import (

@@ -1,3 +1,5 @@
+// The JWS core: strict parsing of a compact token and signature verification for the three allowed algorithms, with key-type checks.
+
 package verifier
 
 import (

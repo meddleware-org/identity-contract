@@ -1,3 +1,5 @@
+// Tests of the key cache and of JWK parsing: the 30-second refresh rule, outage behaviour, oversized and unusable sets, invalid keys.
+
 package verifier
 
 import (

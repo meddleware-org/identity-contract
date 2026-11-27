@@ -1,3 +1,5 @@
+// The key cache (contract section 1): bounded in size and age, one refresh at most every 30 seconds, kept through a provider outage.
+
 package verifier
 
 import (

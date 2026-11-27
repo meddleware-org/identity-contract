@@ -1,3 +1,5 @@
+// Tests of discovery checking: the good document, each MUST of contract section 1 broken in turn, and the fetch over a test server.
+
 package verifier
 
 import (

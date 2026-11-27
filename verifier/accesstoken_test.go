@@ -1,3 +1,5 @@
+// Tests of access-token verification: every allowed algorithm, and each way a token can be refused, with its error code.
+
 package verifier
 
 import (

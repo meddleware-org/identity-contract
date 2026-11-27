@@ -1,3 +1,5 @@
+// JSON Web Keys (RFC 7517): conversion of a published key to a Go public key with the contract's refusals, and RFC 7638 thumbprints.
+
 package verifier
 
 import (

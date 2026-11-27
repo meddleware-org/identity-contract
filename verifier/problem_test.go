@@ -1,3 +1,5 @@
+// Tests of the error response and the status mapping.
+
 package verifier
 
 import (

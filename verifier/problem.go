@@ -1,3 +1,5 @@
+// The uniform error response (contract section 6): RFC 9457 bodies that never say which check refused.
+
 package verifier
 
 import (

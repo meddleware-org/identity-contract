@@ -1,3 +1,5 @@
+// Access-token verification (contract section 2): RFC 9068 `at+jwt` tokens, the pinned algorithm list, the required claims, audience, lifetime and clock-skew rules.
+
 package verifier
 
 import (

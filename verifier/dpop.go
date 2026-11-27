@@ -1,3 +1,5 @@
+// DPoP proof verification (contract section 5, RFC 9449) and the replay cache that makes each proof single-use.
+
 package verifier
 
 import (
