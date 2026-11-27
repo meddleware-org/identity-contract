@@ -47,7 +47,6 @@ func TestParseDiscovery(t *testing.T) {
 	bad := map[string][]byte{
 		"issuer differs":     discoveryWith("issuer", "https://evil.example"),
 		"issuer with slash":  discoveryWith("issuer", testIssuer+"/"),
-		"plain also offered": discoveryWith("code_challenge_methods_supported", []string{"S256", "plain"}),
 		"no S256":            discoveryWith("code_challenge_methods_supported", []string{"plain"}),
 		"no pkce list":       discoveryWith("code_challenge_methods_supported", nil),
 		"no private_key_jwt": discoveryWith("token_endpoint_auth_methods_supported", []string{"client_secret_basic"}),
@@ -62,6 +61,10 @@ func TestParseDiscovery(t *testing.T) {
 		if _, err := ParseDiscovery(body, testIssuer, false); CodeOf(err) != CodeDiscovery {
 			t.Errorf("%s: %v", name, err)
 		}
+	}
+	// Listing `plain` next to S256 is accepted: the provider's refusal is a conformance matter (see the conformance package).
+	if _, err := ParseDiscovery(discoveryWith("code_challenge_methods_supported", []string{"plain", "S256"}), testIssuer, false); err != nil {
+		t.Errorf("plain next to S256: %v", err)
 	}
 	if _, err := ParseDiscovery([]byte("{"), testIssuer, false); CodeOf(err) != CodeMalformed {
 		t.Errorf("malformed: %v", err)

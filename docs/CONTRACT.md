@@ -14,7 +14,7 @@ draft (revision 17) and is cited only as a target profile.
 - One **issuer URL** per environment, held as configuration by every relying party and resource server (`ISSUER`); nothing else about the provider is hard-coded.
   Everything else comes from discovery: `/.well-known/openid-configuration` (OpenID Connect Discovery), with RFC 8414 metadata available alongside.
 - The discovery document MUST state: `issuer` equal to the configured value; `authorization_response_iss_parameter_supported: true`; `code_challenge_methods_supported`
-  containing **only `S256`**; `token_endpoint_auth_methods_supported` including `private_key_jwt`; `dpop_signing_alg_values_supported`; `revocation_endpoint`;
+  **containing `S256`** (a provider may also list `plain`, as Keycloak does globally; what binds is behaviour: see section 3 and the conformance suite); `token_endpoint_auth_methods_supported` including `private_key_jwt`; `dpop_signing_alg_values_supported`; `revocation_endpoint`;
   `end_session_endpoint`; `backchannel_logout_supported: true`; `jwks_uri`.
 - A relying party MUST refuse a discovery document whose `issuer` differs from its configured issuer (string equality), and MUST refuse a non-`https` issuer outside
   the development mode.
@@ -38,9 +38,13 @@ draft (revision 17) and is cited only as a target profile.
 - Browser consoles do not hold tokens (AUTH-M7). The console's **backend** is the confidential client: authorization code with **PKCE S256**, **exact** redirect URIs, `state` and `nonce`,
   `iss` checked on the authorization response (RFC 9207), then a server-side session behind a `__Host-` cookie (`Secure; HttpOnly; SameSite=Lax; Path=/`, no `Domain`).
 - ID token checks, in the verifier: signature (pinned algorithm), `iss`, `aud` equal to the client id, `exp`, `nbf` if present, `nonce`, `azp` if present, `sub` present.
-- **Assurance.** The console requires a phishing-resistant sign-in: it requests `acr_values` for the platform's phishing-resistant level and MUST verify the returned `acr`, and MUST
-  verify `amr` (RFC 8176) contains a hardware- or software-key value together with user presence and verification. The exact `acr` and `amr` strings the reference provider emits
-  are fixed by the spike (FU-0182) and written here; they are not guessed.
+- **PKCE is S256 only, by behaviour.** The console client is configured so that a request with `plain`, or with no `code_challenge`, is answered with `invalid_request` and the `iss`
+  parameter (RFC 9207). The discovery list cannot prove that, so the conformance suite (`TestPKCEOnlyS256`) asserts it against the live provider.
+- **Assurance.** The console requires a phishing-resistant sign-in: it requests `acr_values=phr` (the platform's phishing-resistant level, LoA 2, reachable only through the passkey path of the
+  provider's browser flow) and MUST verify the returned `acr` is `phr`. The reference provider (Keycloak 26.8.2, spike FU-0182) emits **no `amr` claim**, so `amr` is **optional**: a verifier
+  checks it only when `RequiredAMR` is set, and the platform does not set it. The assurance is `acr`, which the provider sets only after a WebAuthn passwordless step with user verification
+  (proved by the spike: a key that does not verify the user is refused). A provider that does emit `amr` (RFC 8176) may be configured to require `hwk`/`swk` with `user`; one that does not is still
+  conformant.
 - **Logout.** RP-Initiated Logout with `id_token_hint`, and **back-channel logout**: each backend exposes an endpoint that verifies the logout token and deletes the session named by `sid`.
 - Session lifetimes: absolute 12 hours, idle 1 hour for the operator consoles (what Cloudflare Access gives today).
 

@@ -5,6 +5,18 @@ release is a patch bump, breaking changes included.
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-11-27
+
+### Added
+- Package `conformance`: the contract's behavioural tests against a live provider, driven by environment variables (`CONF_ISSUER` and the rest; every test skips when none is set). Discovery, the
+  machine client's DPoP-bound RFC 9068 token and the refusal of bad client assertions, S256-only PKCE by behaviour, and the ID token and back-channel logout token a real browser sign-in produced.
+  First provider to pass it: Keycloak 26.8.2 (`k8s/base/auth/tests/keycloak-spike` in the workspace).
+
+### Changed
+- `verifier.ParseDiscovery` no longer refuses a document that lists `plain` next to `S256`: Keycloak lists it globally while refusing it for a client configured for S256. The behaviour is proved by
+  `conformance.TestPKCEOnlyS256`. Contract section 1 and section 3 say so.
+- Contract section 3: `amr` is optional (Keycloak emits none); the required assurance is `acr` = `phr`.
+
 ## [0.0.2] - 2026-11-27
 
 ### Added

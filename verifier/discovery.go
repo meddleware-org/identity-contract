@@ -27,7 +27,8 @@ type Discovery struct {
 	RevocationEndpoint string `json:"revocation_endpoint"`
 	// EndSessionEndpoint ends the session (RP-Initiated Logout).
 	EndSessionEndpoint string `json:"end_session_endpoint"`
-	// CodeChallengeMethods lists the PKCE methods; the contract allows only S256.
+	// CodeChallengeMethods lists the PKCE methods the provider advertises; S256 must be among them. Whether `plain` is also advertised is not the
+	// document's business: what the provider refuses is proved by the conformance suite, not read from this list.
 	CodeChallengeMethods []string `json:"code_challenge_methods_supported"`
 	// TokenEndpointAuthMethods lists client authentication methods; private_key_jwt must be among them.
 	TokenEndpointAuthMethods []string `json:"token_endpoint_auth_methods_supported"`
@@ -56,8 +57,9 @@ func ParseDiscovery(body []byte, issuer string, allowInsecure bool) (*Discovery,
 	if !d.IssParameterSupported || !d.BackchannelLogoutSupported {
 		return nil, newError(CodeDiscovery)
 	}
-	// S256 and nothing else: a provider that still offers `plain` fails the contract.
-	if len(d.CodeChallengeMethods) != 1 || d.CodeChallengeMethods[0] != "S256" {
+	// S256 must be offered. A provider may list `plain` too (Keycloak does, even for a client that refuses it): the contract's rule that a client
+	// can only use S256 is a behaviour, asserted against the live provider by conformance.TestPKCEOnlyS256, not something the list can prove.
+	if !contains(d.CodeChallengeMethods, "S256") {
 		return nil, newError(CodeDiscovery)
 	}
 	if !contains(d.TokenEndpointAuthMethods, "private_key_jwt") || len(d.DPoPSigningAlgs) == 0 {
